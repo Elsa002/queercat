@@ -8,7 +8,7 @@ a version of lolcat with some lgbtq+ pride flags options
 Concatenate FILE(s), or standard input, to standard output.  
 With no FILE, or when FILE is -, read standard input.
 
---flag <d>                , -f <d>: Choose colors to use: [rainbow: 0, trans: 1, NB: 2, lesbian: 3, gay: 4, pan: 5, bi: 6] default is rainbow
+--flag <d>                , -f <d>: Choose colors to use: [rainbow: 0, trans: 1, NB: 2, lesbian: 3, gay: 4, pan: 5, bi: 6, genderfluid: 7] default is rainbow(0)
 --horizontal-frequency <d>, -h <d>: Horizontal rainbow frequency (default: 0.23)  
   --vertical-frequency <d>, -v <d>: Vertical rainbow frequency (default: 0.1)  
                  --force-color, -F: Force color even when stdout is not a tty  

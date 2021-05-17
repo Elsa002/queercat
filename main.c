@@ -22,7 +22,8 @@ static char helpstr[] = "\n"
                         "\n"
                         "--flag <d>                , -f <d>: Choose colors to use:\n"
                         "                                    [rainbow: 0, trans: 1, NB: 2, lesbian: 3, \n"
-                        "                                    gay: 4, pan: 5, bi: 6] default is rainbow\n"
+                        "                                    gay: 4, pan: 5, bi: 6, genderfluid: 7]\n"
+                        "                                    default is rainbow (0)\n"
                         "--horizontal-frequency <d>, -h <d>: Horizontal rainbow frequency (default: 0.23)\n"
                         "  --vertical-frequency <d>, -v <d>: Vertical rainbow frequency (default: 0.1)\n"
                         "                 --force-color, -F: Force color even when stdout is not a tty\n"
@@ -52,6 +53,7 @@ const unsigned char codes_les[] = {196, 208, 255, 170, 128};
 const unsigned char codes_gay[] = {36, 49, 121, 255, 117, 105, 92};
 const unsigned char codes_pan[] = {200, 200, 200,  227, 227, 227,  45, 45, 45};
 const unsigned char codes_bi[] = {162, 162, 162,  129, 129, 27, 27, 27};
+const unsigned char codes_gfl[] = {219, 219, 255, 255, 128, 128, 234, 234, 20, 20};
 
 #define FLAG_5_0 (0)
 #define FLAG_5_1 (0.4f * M_PI)
@@ -106,6 +108,13 @@ const unsigned char codes_bi[] = {162, 162, 162,  129, 129, 27, 27, 27};
 #define BI__BLU (0x3b72ff)
 #define BI__FCT (4.0f)
 
+#define GFL_PNK (0xffa0bc)
+#define GFL_WHT (0xffffff)
+#define GFL_PUR (0xc600e4)
+#define GFL_BLK (0x000000)
+#define GFL_BLU (0x4e3cbb)
+#define GFL_FCT (2.0f)
+
 typedef enum flag_type_e
 {
     FLAG_TYPE_INVALID = -1,
@@ -116,6 +125,7 @@ typedef enum flag_type_e
     FLAG_TYPE_GAY,
     FLAG_TYPE_PAN,
     FLAG_TYPE_BI,
+    FLAG_TYPE_GENDERFLUID,
     FLAG_TYPE_END
 } flag_type_t;
 
@@ -336,6 +346,33 @@ static void get_color(flag_type_t flag_type, float offset, float theta, uint8_t 
             gen_color(BI__BLU, BI__PNK, theta, BI__FCT, red, green, blue);
         } 
         break;
+    case FLAG_TYPE_GENDERFLUID:
+        if (FLAG_5_0 <= theta && FLAG_5_1 > theta) 
+        { /* pink to white */
+            theta = 1 - ((theta - FLAG_5_0) / (FLAG_5_1 - FLAG_5_0));
+            gen_color(GFL_PNK, GFL_WHT, theta, GFL_FCT, red, green, blue);
+        } 
+        else if (FLAG_5_1 <= theta && FLAG_5_2 > theta) 
+        { /* white to purple */
+            theta = 1 - ((theta - FLAG_5_1) / (FLAG_5_2 - FLAG_5_1));
+            gen_color(GFL_WHT, GFL_PUR, theta, GFL_FCT, red, green, blue);
+        } 
+        else if (FLAG_5_2 <= theta && FLAG_5_3 > theta) 
+        { /* purple to black */
+            theta = 1 - ((theta - FLAG_5_2) / (FLAG_5_3 - FLAG_5_2));
+            gen_color(GFL_PUR, GFL_BLK, theta, GFL_FCT, red, green, blue);
+        } 
+        else if (FLAG_5_3 <= theta && FLAG_5_4 > theta) 
+        { /* black to blue */
+            theta = 1 - ((theta - FLAG_5_3) / (FLAG_5_4 - FLAG_5_3));
+            gen_color(GFL_BLK, GFL_BLU, theta, GFL_FCT, red, green, blue);
+        } 
+        else if (FLAG_5_4 <= theta && FLAG_5_5 > theta) 
+        { /* blue back to pink */
+            theta = 1 - ((theta - FLAG_5_4) / (FLAG_5_5 - FLAG_5_4));
+            gen_color(GFL_BLU, GFL_PNK, theta, GFL_FCT, red, green, blue);
+        } 
+        break;
     }
 }
 
@@ -371,6 +408,10 @@ static size_t get_codes_len(flag_type_t flag_type)
     case FLAG_TYPE_BI:
         return ARRAY_SIZE(codes_bi);
         break;
+    
+    case FLAG_TYPE_GENDERFLUID:
+        return ARRAY_SIZE(codes_gfl);
+        break;
     }
 }
 
@@ -405,6 +446,10 @@ static const char* get_codes(flag_type_t flag_type)
 
     case FLAG_TYPE_BI:
         return codes_bi;
+        break;
+    
+    case FLAG_TYPE_GENDERFLUID:
+        return codes_gfl;
         break;
     }
 }
