@@ -25,7 +25,7 @@ static char helpstr[] = "\n"
                         "                                    gay: 4, pan: 5, bi: 6] default is rainbow\n"
                         "--horizontal-frequency <d>, -h <d>: Horizontal rainbow frequency (default: 0.23)\n"
                         "  --vertical-frequency <d>, -v <d>: Vertical rainbow frequency (default: 0.1)\n"
-                        "                 --force-color, -f: Force color even when stdout is not a tty\n"
+                        "                 --force-color, -F: Force color even when stdout is not a tty\n"
                         "             --no-force-locale, -l: Use encoding from system locale instead of\n"
                         "                                    assuming UTF-8\n"
                         "                      --random, -r: Random colors\n"
@@ -451,7 +451,7 @@ int main(int argc, char** argv)
             } else {
                 usage();
             }
-        } else if (!strcmp(argv[i], "-f") || !strcmp(argv[i], "--force-color")) {
+        } else if (!strcmp(argv[i], "-F") || !strcmp(argv[i], "--force-color")) {
             colors = 1;
         } else if (!strcmp(argv[i], "-l") || !strcmp(argv[i], "--no-force-locale")) {
             force_locale = 0;
