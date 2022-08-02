@@ -73,8 +73,8 @@ const unsigned char codes_gfl[] = {219, 219, 255, 255, 128, 128, 234, 234, 20, 2
 #define FLAG_3_2 (1.334f * M_PI)
 #define FLAG_3_3 (2.0f * M_PI)
 
-#define TRA_BLU (0xa0e0ff)
-#define TRA_PNK (0xffa0e0)
+#define TRA_BLU (0x55cdfc)
+#define TRA_PNK (0xf7a8b8)
 #define TRA_WHT (0xffffff)
 #define TRA_FCT (4.0f)
 
