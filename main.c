@@ -55,6 +55,7 @@ const unsigned char codes_pan[] = {200, 200, 200,  227, 227, 227,  45, 45, 45};
 const unsigned char codes_bi[] = {162, 162, 162,  129, 129, 27, 27, 27};
 const unsigned char codes_gfl[] = {219, 219, 255, 255, 128, 128, 234, 234, 20, 20};
 const unsigned char codes_ase[] = {233, 233, 247, 247, 255, 255, 5, 5};
+
 #define FLAG_5_0 (0)
 #define FLAG_5_1 (0.4f * M_PI)
 #define FLAG_5_2 (0.8f * M_PI)
@@ -353,6 +354,7 @@ static void get_color(flag_type_t flag_type, float offset, float theta, uint8_t 
             gen_color(BI__BLU, BI__PNK, theta, BI__FCT, red, green, blue);
         } 
         break;
+
     case FLAG_TYPE_GENDERFLUID:
         if (FLAG_5_0 <= theta && FLAG_5_1 > theta) 
         { /* pink to white */
@@ -380,28 +382,29 @@ static void get_color(flag_type_t flag_type, float offset, float theta, uint8_t 
             gen_color(GFL_BLU, GFL_PNK, theta, GFL_FCT, red, green, blue);
         } 
         break;
+
     case FLAG_TYPE_ASEXUAL:
-	if (FLAG_4_0 <= theta && FLAG_4_1 > theta)
-	{ /* black to grey */
-	    theta = 1 - ((theta - FLAG_4_0) / (FLAG_4_1 - FLAG_4_0));
-	    gen_color(ASE_BLA, ASE_GRE, theta, ASE_FCT, red, green, blue);
-	}
-	else if (FLAG_4_1 <= theta && FLAG_4_2 > theta)
-	{ /* grey to white */
-	    theta = 1 - ((theta - FLAG_4_1) / (FLAG_4_2 - FLAG_4_1));
-	    gen_color(ASE_GRE, ASE_WHI, theta, ASE_FCT, red, green, blue);
-	}
-	else if (FLAG_4_2 <= theta && FLAG_4_3 > theta)
-	{ /* white to purple */
-	    theta = 1 - ((theta - FLAG_4_2) / (FLAG_4_3 - FLAG_4_2));
-	    gen_color(ASE_WHI, ASE_PUR, theta, ASE_FCT, red, green, blue);
-	}
-	else if (FLAG_4_3 <= theta && FLAG_4_4 > theta)
-	{ /* purple back to black */
-	    theta = 1 - ((theta - FLAG_4_3) / (FLAG_4_4 - FLAG_4_3));
-	    gen_color(ASE_PUR, ASE_BLA, theta, ASE_FCT, red, green, blue);
-	}
-	break;
+        if (FLAG_4_0 <= theta && FLAG_4_1 > theta) 
+        { /* black to grey */
+            theta = 1 - ((theta - FLAG_4_0) / (FLAG_4_1 - FLAG_4_0));
+            gen_color(ASE_BLA, ASE_GRE, theta, ASE_FCT, red, green, blue);
+        } 
+        else if (FLAG_4_1 <= theta && FLAG_4_2 > theta) 
+        { /* grey to white */
+            theta = 1 - ((theta - FLAG_4_1) / (FLAG_4_2 - FLAG_4_1));
+            gen_color(ASE_GRE, ASE_WHI, theta, ASE_FCT, red, green, blue);
+        } 
+        else if (FLAG_4_2 <= theta && FLAG_4_3 > theta) 
+        { /* white to purple */
+            theta = 1 - ((theta - FLAG_4_2) / (FLAG_4_3 - FLAG_4_2));
+            gen_color(ASE_WHI, ASE_PUR, theta, ASE_FCT, red, green, blue);
+        } 
+        else if (FLAG_4_3 <= theta && FLAG_4_4 > theta) 
+        { /* purple back to black */
+            theta = 1 - ((theta - FLAG_4_3) / (FLAG_4_4 - FLAG_4_3));
+            gen_color(ASE_PUR, ASE_BLA, theta, ASE_FCT, red, green, blue);
+        } 
+        break;
     }
 }
 
@@ -441,10 +444,10 @@ static size_t get_codes_len(flag_type_t flag_type)
     case FLAG_TYPE_GENDERFLUID:
         return ARRAY_SIZE(codes_gfl);
         break;
-    case FLAG_TYPE_ASEXUAL:
-    	return ARRAY_SIZE(codes_ase);
-	break;
 
+    case FLAG_TYPE_ASEXUAL:
+        return ARRAY_SIZE(codes_ase);
+        break;
     }
 }
 
@@ -484,10 +487,10 @@ static const char* get_codes(flag_type_t flag_type)
     case FLAG_TYPE_GENDERFLUID:
         return codes_gfl;
         break;
-   case FLAG_TYPE_ASEXUAL:
-    	return codes_ase;
-	break;
 
+    case FLAG_TYPE_ASEXUAL:
+        return codes_ase;
+        break;
     }
 }
 
