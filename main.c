@@ -313,6 +313,7 @@ static void find_escape_sequences(wint_t current_char, escape_state_t *state);
 static wint_t helpstr_hack(FILE * _ignored);
 
 /* Colors handling */
+static const pattern_t *get_pattern(flag_type_t flag_type);
 static void mix_colors(uint32_t color1, uint32_t color2, float balance, float factor, color_t *output_color);
 static void print_color(const pattern_t *pattern, color_type_t color_type, int char_index, int line_index, double freq_h, double freq_v, char c, double offx, int rand_offset, int cc);
 
@@ -349,6 +350,41 @@ static wint_t helpstr_hack(FILE * _ignored)
         return c;
     idx = 0;
     return WEOF;
+}
+
+static const pattern_t *get_pattern(flag_type_t flag_type)
+{
+    switch (flag_type) {
+        case FLAG_TYPE_RAINBOW:
+            return &rainbow;
+
+        case FLAG_TYPE_TRANS:
+            return &transgender;
+
+        case FLAG_TYPE_NB:
+            return &nonbinary;
+
+        case FLAG_TYPE_LESBIAN:
+            return &lesbian;
+
+        case FLAG_TYPE_GAY:
+            return &gay;
+
+        case FLAG_TYPE_PAN:
+            return &pansexual;
+
+        case FLAG_TYPE_BI:
+            return &bisexual;
+
+        case FLAG_TYPE_GENDERFLUID:
+            return &gender_fluid;
+
+        case FLAG_TYPE_ASEXUAL:
+            return &asexual;
+
+        default:
+            return NULL;
+    }
 }
 
 static void mix_colors(uint32_t color1, uint32_t color2, float balance, float factor, color_t *output_color)
@@ -526,7 +562,7 @@ int main(int argc, char** argv)
     }
 
     /* Get pattern. */
-    pattern = &rainbow;
+    pattern = get_pattern(flag_type);
 
     /* For file in inputs. */
     for (char** filename = inputs; filename < inputs_end; filename++) {
