@@ -315,7 +315,7 @@ static wint_t helpstr_hack(FILE * _ignored);
 /* Colors handling */
 static const pattern_t *get_pattern(flag_type_t flag_type);
 static void mix_colors(uint32_t color1, uint32_t color2, float balance, float factor, color_t *output_color);
-static void print_color(const pattern_t *pattern, color_type_t color_type, int char_index, int line_index, double freq_h, double freq_v, char c, double offx, int rand_offset, int cc);
+static void print_color(const pattern_t *pattern, color_type_t color_type, int char_index, int line_index, double freq_h, double freq_v, double offx, int rand_offset, int cc);
 
 /* *** Functions *****************************************************/
 static void usage(void)
@@ -444,7 +444,7 @@ void get_color_stripes (const color_pattern_t *color_pattern, float theta, color
     }
 }
 
-static void print_color(const pattern_t *pattern, color_type_t color_type, int char_index, int line_index, double freq_h, double freq_v, char c, double offx, int rand_offset, int cc)
+static void print_color(const pattern_t *pattern, color_type_t color_type, int char_index, int line_index, double freq_h, double freq_v, double offx, int rand_offset, int cc)
 {
     float theta;
     color_t color = { 0 };
@@ -453,7 +453,6 @@ static void print_color(const pattern_t *pattern, color_type_t color_type, int c
 
     switch (color_type) {
         case COLOR_TYPE_24_BIT:
-            char_index += wcwidth(c);
             theta = char_index * freq_h / 5.0f + line_index * freq_v + (offx + 2.0f * rand_offset / (float)RAND_MAX) * M_PI;
 
             pattern->get_color(&pattern->color_pattern, theta, &color);
@@ -461,7 +460,7 @@ static void print_color(const pattern_t *pattern, color_type_t color_type, int c
             break;
 
         case COLOR_TYPE_ANSII:
-            ncc = offx * pattern->ansii_pattern.codes_count + (int)((char_index += wcwidth(c)) * freq_h + line_index * freq_v);
+            ncc = offx * pattern->ansii_pattern.codes_count + (int)(char_index * freq_h + line_index * freq_v);
             if (cc != ncc)
                 wprintf(L"\033[38;5;%hhum", pattern->ansii_pattern.ansii_codes[(rand_offset + (cc = ncc)) % pattern->ansii_pattern.codes_count]);
             break;
@@ -602,9 +601,9 @@ int main(int argc, char** argv)
                     if (current_char == '\n') {
                         line_index++;
                         char_index = 0;
-
                     } else {
-                        print_color(pattern, color_type, char_index, line_index, freq_h, freq_v, current_char, offx, rand_offset, cc);
+                        char_index += wcwidth(current_char);
+                        print_color(pattern, color_type, char_index, line_index, freq_h, freq_v, offx, rand_offset, cc);
                     }
                 }
             }
@@ -613,7 +612,7 @@ int main(int argc, char** argv)
             putwchar(current_char);
 
             if (escape_state == ESCAPE_STATE_LAST) {  /* implies "print_colors" */
-                print_color(pattern, color_type, char_index, line_index, freq_h, freq_v, current_char, offx, rand_offset, cc);
+                print_color(pattern, color_type, char_index, line_index, freq_h, freq_v, offx, rand_offset, cc);
             }
         }
 
