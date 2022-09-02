@@ -1,5 +1,7 @@
 #define _XOPEN_SOURCE
 
+/* *** Includes ******************************************************/
+#include <stdbool.h>
 #include <ctype.h>
 #include <err.h>
 #include <errno.h>
@@ -14,6 +16,27 @@
 #include <time.h>
 #include "math.h"
 
+
+/* *** Common ********************************************************/
+/* Constants */
+#define NEWLINE '\n'
+#define ESCAPE_CHAR '\033'
+
+/* Types */
+typedef enum escape_state_e {
+    ESCAPE_STATE_OUT = 0,
+    ESCAPE_STATE_IN,
+    ESCAPE_STATE_LAST
+} escape_state_t;
+
+/* Macros */
+#define UNUSED(var) ((void)(var))
+#define NEXT_CYCLIC_ELEMENT(array, index, array_size) \
+    (((index) + 1 == (array_size)) ? (array)[0] : (array)[((index) + 1)] )
+#define IS_LETTER(c) (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z'))
+
+
+/* *** Constants *****************************************************/
 static char helpstr[] = "\n"
                         "Usage: queercat [-f flag_number][-h horizontal_speed] [-v vertical_speed] [--] [FILES...]\n"
                         "\n"
@@ -45,83 +68,51 @@ static char helpstr[] = "\n"
                         "base for code: <https://github.com/jaseg/lolcat/>\n"
                         "Original idea: <https://github.com/busyloop/lolcat/>\n";
 
-#define ARRAY_SIZE(foo) (sizeof(foo) / sizeof(foo[0]))
-const unsigned char codes[] = { 39, 38, 44, 43, 49, 48, 84, 83, 119, 118, 154, 148, 184, 178, 214, 208, 209, 203, 204, 198, 199, 163, 164, 128, 129, 93, 99, 63, 69, 33 };
-const unsigned char codes_tra[] = {117, 117,  225, 225,  255, 255,  225, 225,  117, 117};
-const unsigned char codes_nb[] = {226, 226, 255, 255, 93, 93, 234, 234};
-const unsigned char codes_les[] = {196, 208, 255, 170, 128};
-const unsigned char codes_gay[] = {36, 49, 121, 255, 117, 105, 92};
-const unsigned char codes_pan[] = {200, 200, 200,  227, 227, 227,  45, 45, 45};
-const unsigned char codes_bi[] = {162, 162, 162,  129, 129, 27, 27, 27};
-const unsigned char codes_gfl[] = {219, 219, 255, 255, 128, 128, 234, 234, 20, 20};
-const unsigned char codes_ase[] = {233, 233, 247, 247, 255, 255, 5, 5};
+#define MAX_FLAG_STRIPES (6)
+#define MAX_ANSII_CODES_PER_STRIPE (5)
+#define MAX_ANSII_CODES_COUNT (MAX_FLAG_STRIPES * MAX_ANSII_CODES_PER_STRIPE)
+#define MAX_FLAG_NAME_LENGTH (64)
 
-#define FLAG_5_0 (0)
-#define FLAG_5_1 (0.4f * M_PI)
-#define FLAG_5_2 (0.8f * M_PI)
-#define FLAG_5_3 (1.2f * M_PI)
-#define FLAG_5_4 (1.6f * M_PI)
-#define FLAG_5_5 (2.0f * M_PI)
 
-#define FLAG_4_0 (0)
-#define FLAG_4_1 (0.5f * M_PI)
-#define FLAG_4_2 (1.0f * M_PI)
-#define FLAG_4_3 (1.5f * M_PI)
-#define FLAG_4_4 (2.0f * M_PI)
+/* *** Types *********************************************************/
+/* Colors. */
+typedef uint32_t hex_color_t;
+typedef unsigned char ansii_code_t;
+typedef struct color_s {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+} color_t;
 
-#define FLAG_3_0 (0)
-#define FLAG_3_1 (0.667f * M_PI)
-#define FLAG_3_2 (1.334f * M_PI)
-#define FLAG_3_3 (2.0f * M_PI)
+/* Color type patterns. */
+typedef enum color_type_e {
+    COLOR_TYPE_INVALID = -1,
+    COLOR_TYPE_ANSII = 0,
+    COLOR_TYPE_24_BIT,
+    COLOR_TYPE_COUNT
+} color_type_t;
+typedef struct ansii_pattern_s {
+    const unsigned int codes_count;
+    const unsigned char ansii_codes[MAX_ANSII_CODES_COUNT];
+} ansii_pattern_t;
+typedef struct color_pattern_s {
+    const uint8_t stripes_count;
+    const uint32_t stripes_colors[MAX_FLAG_STRIPES];
+    const float factor;
+} color_pattern_t;
 
-#define TRA_BLU (0x55cdfc)
-#define TRA_PNK (0xf7a8b8)
-#define TRA_WHT (0xffffff)
-#define TRA_FCT (4.0f)
+/* Get color function. */
+typedef void(get_color_f)(const color_pattern_t *color_pattern, float theta, color_t *color);
 
-#define NB__YLW (0xffff00)
-#define NB__PUR (0xb000ff)
-#define NB__WHT (0xffffff)
-#define NB__BLK (0x000000)
-#define NB__FCT (4.0f)
+/* Pattern. */
+typedef struct pattern_s {
+    const char name[MAX_FLAG_NAME_LENGTH];
+    const ansii_pattern_t ansii_pattern;
+    const color_pattern_t color_pattern;
+    get_color_f *get_color;
+} pattern_t;
 
-#define LES_RED (0xff0000)
-#define LES_ORG (0xff993f)
-#define LES_WHT (0xffffff)
-#define LES_PNK (0xff8cbd)
-#define LES_PUR (0xff4284)
-#define LES_FCT (2.0f)
-
-#define GAY_GR1 (0x00b685)
-#define GAY_GR2 (0x6bffb6)
-#define GAY_WHT (0xffffff)
-#define GAY_BL1 (0x8be1ff)
-#define GAY_BL2 (0x8e1ae1)
-#define GAY_FCT (6.0f)
-
-#define PAN_PNK (0xff3388)
-#define PAN_YLW (0xffea00)
-#define PAN_BLU (0x00dbff)
-#define PAN_FCT (8.0f)
-
-#define BI__PNK (0xff3b7b)
-#define BI__PUR (0xd06bcc)
-#define BI__BLU (0x3b72ff)
-#define BI__FCT (4.0f)
-
-#define GFL_PNK (0xffa0bc)
-#define GFL_WHT (0xffffff)
-#define GFL_PUR (0xc600e4)
-#define GFL_BLK (0x000000)
-#define GFL_BLU (0x4e3cbb)
-#define GFL_FCT (2.0f)
-
-#define ASE_BLA (0x000000)
-#define ASE_GRE (0xa3a3a3)
-#define ASE_WHI (0xffffff)
-#define ASE_PUR (0x800080)
-#define ASE_FCT (4.0f)
-
+/* Patterns enum. */
 typedef enum flag_type_e
 {
     FLAG_TYPE_INVALID = -1,
@@ -137,18 +128,196 @@ typedef enum flag_type_e
     FLAG_TYPE_END
 } flag_type_t;
 
-static void find_escape_sequences(wint_t c, int* state)
-{
-    if (c == '\033') { /* Escape sequence YAY */
-        *state = 1;
-    } else if (*state == 1) {
-        if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z'))
-            *state = 2;
-    } else {
-        *state = 0;
-    }
-}
 
+/* *** Pattern Functions *********************************************/
+get_color_f get_color_rainbow;
+get_color_f get_color_stripes;
+
+
+/* *** Flags *********************************************************/
+const pattern_t rainbow = {
+    .name = "rainbow",
+    .ansii_pattern = {
+        .codes_count = 30,
+        .ansii_codes = { 39, 38, 44, 43, 49, 48, 84, 83, 119, 118, 154, 148, 184, 178,
+        214, 208, 209, 203, 204, 198, 199, 163, 164, 128, 129, 93, 99, 63, 69, 33 }
+    },
+    .color_pattern = { 0 },
+    .get_color = get_color_rainbow
+};
+
+const pattern_t transgender = {
+    .name = "transgender",
+    .ansii_pattern = {
+        .codes_count = 10,
+        .ansii_codes = {117, 117,  225, 225,  255, 255,  225, 225,  117, 117}
+    },
+    .color_pattern = {
+        .stripes_count = 5,
+        .stripes_colors = {
+            0x55cdfc, /* #55cdfd - Blue */
+            0xf7a8b8, /* #f7a8b8 - Pink */
+            0xffffff, /* #ffffff - White */
+            0xf7a8b8, /* #f7a8b8 - Pink */
+            0x55cdfc  /* #55cdfc - Blue */
+        },
+        .factor = 4.0f
+    },
+    .get_color = get_color_stripes
+};
+
+const pattern_t nonbinary = {
+    .name = "nonbinary",
+    .ansii_pattern = {
+        .codes_count = 8,
+        .ansii_codes = {226, 226, 255, 255, 93, 93, 234, 234}
+    },
+    .color_pattern = {
+        .stripes_count = 4,
+        .stripes_colors = {
+            0xffff00, /* #ffff00 - Yellow */
+            0xb000ff, /* #b000ff - Purple */
+            0xffffff, /* #ffffff - White */
+            0x000000  /* #000000 - Black */
+        },
+        .factor = 4.0f
+    },
+    .get_color = get_color_stripes
+};
+
+const pattern_t lesbian = {
+    .name = "lesbian",
+    .ansii_pattern = {
+        .codes_count = 5,
+        .ansii_codes = {196, 208, 255, 170, 128}
+    },
+    .color_pattern = {
+        .stripes_count = 5,
+        .stripes_colors = {
+            0xff0000, /* #ff0000 - Red */
+            0xff993f, /* #ff993f - Orange */
+            0xffffff, /* #ffffff - White */
+            0xff8cbd, /* #ff8cbd - Pink */
+            0xff4284  /* #ff4284 - Purple */
+        },
+        .factor = 2.0f
+    },
+    .get_color = get_color_stripes
+};
+
+const pattern_t gay = {
+    .name = "gay",
+    .ansii_pattern = {
+        .codes_count = 7,
+        .ansii_codes = {36, 49, 121, 255, 117, 105, 92}
+    },
+    .color_pattern = {
+        .stripes_count = 5,
+        .stripes_colors = {
+            0x00b685, /* #00b685 - Teal */
+            0x6bffb6, /* #6bffb6 - Green */
+            0xffffff, /* #ffffff - White */
+            0x8be1ff, /* #8be1ff - Blue */
+            0x8e1ae1  /* #8e1ae1 - Purple */
+        },
+        .factor = 6.0f
+    },
+    .get_color = get_color_stripes
+};
+
+const pattern_t pansexual = {
+    .name = "pansexual",
+    .ansii_pattern = {
+        .codes_count = 9,
+        .ansii_codes = {200, 200, 200,  227, 227, 227,  45, 45, 45}
+    },
+    .color_pattern = {
+        .stripes_count = 3,
+        .stripes_colors = {
+            0xff3388, /* #ff3388 - Pink */
+            0xffea00, /* #ffea00 - Yellow */
+            0x00dbff  /* #00dbff - Cyan */
+        },
+        .factor = 8.0f
+    },
+    .get_color = get_color_stripes
+};
+
+const pattern_t bisexual = {
+    .name = "bisexual",
+    .ansii_pattern = {
+        .codes_count = 8,
+        .ansii_codes = {162, 162, 162,  129, 129, 27, 27, 27}
+    },
+    .color_pattern = {
+        .stripes_count = 5,
+        .stripes_colors = {
+            0xff3b7b, /* #ff3b7b - Pink */
+            0xff3b7b, /* #ff3b7b - Pink */
+            0xd06bcc, /* #d06bcc - Purple */
+            0x3b72ff, /* #3b72ff - Blue */
+            0x3b72ff  /* #3b72ff - Blue */
+        },
+        .factor = 4.0f
+    },
+    .get_color = get_color_stripes
+};
+
+const pattern_t gender_fluid = {
+    .name = "gender_fluid",
+    .ansii_pattern = {
+        .codes_count = 10,
+        .ansii_codes = {219, 219, 255, 255, 128, 128, 234, 234, 20, 20}
+    },
+    .color_pattern = {
+        .stripes_count = 5,
+        .stripes_colors = {
+            0xffa0bc, /* #ffa0bc - Pink */
+            0xffffff, /* #ffffff - White */
+            0xc600e4, /* #c600e4 - Purple */
+            0x000000, /* #000000 - Black */
+            0x4e3cbb  /* #4e3cbb - Blue */
+        },
+        .factor = 2.0f
+    },
+    .get_color = get_color_stripes
+};
+
+const pattern_t asexual = {
+    .name = "asexual",
+    .ansii_pattern = {
+        .codes_count = 8,
+        .ansii_codes = {233, 233, 247, 247, 255, 255, 5, 5}
+    },
+    .color_pattern = {
+        .stripes_count = 4,
+        .stripes_colors = {
+            0x000000, /* #000000 - Black */
+            0xa3a3a3, /* #a3a3a3 - Gray */
+            0xffffff, /* #ffffff - White */
+            0x800080  /* #800080 - Purple */
+        },
+        .factor = 4.0f
+    },
+    .get_color = get_color_stripes
+};
+
+
+/* *** Functions Declarations ****************************************/
+/* Info */
+static void usage(void);
+static void version(void);
+
+/* Helpers */
+static void find_escape_sequences(wint_t current_char, escape_state_t *state);
+static wint_t helpstr_hack(FILE * _ignored);
+
+/* Colors handling */
+static const pattern_t *get_pattern(flag_type_t flag_type);
+static void mix_colors(uint32_t color1, uint32_t color2, float balance, float factor, color_t *output_color);
+static void print_color(const pattern_t *pattern, color_type_t color_type, int char_index, int line_index, double freq_h, double freq_v, double offx, int rand_offset, int cc);
+
+/* *** Functions *****************************************************/
 static void usage(void)
 {
     wprintf(L"Usage: queercat [-h horizontal_speed] [-v vertical_speed] [--] [FILES...]\n");
@@ -157,8 +326,19 @@ static void usage(void)
 
 static void version(void)
 {
-    wprintf(L"queercat version 1.0, (c) 2021 elsa002\n");
+    wprintf(L"queercat version 2.0, (c) 2022 elsa002\n");
     exit(0);
+}
+
+static void find_escape_sequences(wint_t current_char, escape_state_t *state)
+{
+    if (current_char == '\033') {
+        *state = ESCAPE_STATE_IN;
+    } else if (*state == ESCAPE_STATE_IN) {
+        *state = IS_LETTER(current_char) ? ESCAPE_STATE_LAST : ESCAPE_STATE_IN;
+    } else {
+        *state = ESCAPE_STATE_OUT;
+    }
 }
 
 static wint_t helpstr_hack(FILE * _ignored)
@@ -172,7 +352,42 @@ static wint_t helpstr_hack(FILE * _ignored)
     return WEOF;
 }
 
-static void gen_color(uint32_t color1, uint32_t color2, float balance, float factor , uint8_t *red, uint8_t *green, uint8_t *blue)
+static const pattern_t *get_pattern(flag_type_t flag_type)
+{
+    switch (flag_type) {
+        case FLAG_TYPE_RAINBOW:
+            return &rainbow;
+
+        case FLAG_TYPE_TRANS:
+            return &transgender;
+
+        case FLAG_TYPE_NB:
+            return &nonbinary;
+
+        case FLAG_TYPE_LESBIAN:
+            return &lesbian;
+
+        case FLAG_TYPE_GAY:
+            return &gay;
+
+        case FLAG_TYPE_PAN:
+            return &pansexual;
+
+        case FLAG_TYPE_BI:
+            return &bisexual;
+
+        case FLAG_TYPE_GENDERFLUID:
+            return &gender_fluid;
+
+        case FLAG_TYPE_ASEXUAL:
+            return &asexual;
+
+        default:
+            return NULL;
+    }
+}
+
+static void mix_colors(uint32_t color1, uint32_t color2, float balance, float factor, color_t *output_color)
 {
     uint8_t red_1   = (color1 & 0xff0000) >> 16;
     uint8_t green_1 = (color1 & 0x00ff00) >>  8;
@@ -184,332 +399,99 @@ static void gen_color(uint32_t color1, uint32_t color2, float balance, float fac
 
     balance = pow(balance, factor);
 
-    *red = lrintf(red_1 * balance + red_2 * (1.0f - balance));
-    *green = lrintf(green_1 * balance + green_2 * (1.0f - balance));
-    *blue = lrintf(blue_1 * balance + blue_2 * (1.0f - balance));
+    output_color->red = lrintf(red_1 * balance + red_2 * (1.0f - balance));
+    output_color->green = lrintf(green_1 * balance + green_2 * (1.0f - balance));
+    output_color->blue = lrintf(blue_1 * balance + blue_2 * (1.0f - balance));
 }
 
-static void get_color(flag_type_t flag_type, float offset, float theta, uint8_t *red, uint8_t *green, uint8_t *blue)
+void get_color_rainbow (const color_pattern_t *color_pattern, float theta, color_t *color)
 {
+    /* Unused variables. */
+    UNUSED(color_pattern);
+
+    /* Get theta in range. */
     while (theta < 0) theta += 2.0f * (float)M_PI;
     while (theta >= 2.0f * (float)M_PI) theta -= 2.0f * (float)M_PI;
-    switch (flag_type)
-    {
-    default:
-    case FLAG_TYPE_RAINBOW:
-        *red   = lrintf((offset + (1.0f - offset) * (0.5f + 0.5f * sin(theta + 0            ))) * 255.0f);
-        *green = lrintf((offset + (1.0f - offset) * (0.5f + 0.5f * sin(theta + 2 * M_PI / 3 ))) * 255.0f);
-        *blue  = lrintf((offset + (1.0f - offset) * (0.5f + 0.5f * sin(theta + 4 * M_PI / 3 ))) * 255.0f);
-        break;
 
-    case FLAG_TYPE_TRANS:
-        if (FLAG_5_0 <= theta && FLAG_5_1 > theta) 
-        { /* blue to pink */
-            theta = 1 - ((theta - FLAG_5_0) / (FLAG_5_1 - FLAG_5_0));
-            gen_color(TRA_BLU, TRA_PNK, theta, TRA_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_1 <= theta && FLAG_5_2 > theta) 
-        { /* pink to white */
-            theta = 1 - ((theta - FLAG_5_1) / (FLAG_5_2 - FLAG_5_1));
-            gen_color(TRA_PNK, TRA_WHT, theta, TRA_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_2 <= theta && FLAG_5_3 > theta) 
-        { /* white to pink*/
-            theta = 1 - ((theta - FLAG_5_2) / (FLAG_5_3 - FLAG_5_2));
-            gen_color(TRA_WHT, TRA_PNK, theta, TRA_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_3 <= theta && FLAG_5_4 > theta) 
-        { /* pink to blue */
-            theta = 1 - ((theta - FLAG_5_3) / (FLAG_5_4 - FLAG_5_3));
-            gen_color(TRA_PNK, TRA_BLU, theta, TRA_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_4 <= theta && FLAG_5_5 > theta) 
-        { /* blue back to blue */
-            theta = 1 - ((theta - FLAG_5_4) / (FLAG_5_5 - FLAG_5_4));
-            gen_color(TRA_BLU, TRA_BLU, theta, TRA_FCT, red, green, blue);
+    /* Generate the color. */
+    color->red   = lrintf((1.0f * (0.5f + 0.5f * sin(theta + 0            ))) * 255.0f);
+    color->green = lrintf((1.0f * (0.5f + 0.5f * sin(theta + 2 * M_PI / 3 ))) * 255.0f);
+    color->blue  = lrintf((1.0f * (0.5f + 0.5f * sin(theta + 4 * M_PI / 3 ))) * 255.0f);
+}
+
+void get_color_stripes (const color_pattern_t *color_pattern, float theta, color_t *color)
+{
+    /* Get theta in range. */
+    while (theta < 0) theta += 2.0f * (float)M_PI;
+    while (theta >= 2.0f * (float)M_PI) theta -= 2.0f * (float)M_PI;
+
+    /* Find the stripe based on theta and generate the color. */
+    for (int i = 0; i < color_pattern->stripes_count; i++) {
+        float stripe_size = (2.0f * M_PI) / color_pattern->stripes_count;
+        float min_theta = i * stripe_size;
+        float max_theta = (i + 1) * stripe_size;
+
+        if (min_theta <= theta && max_theta > theta) {
+            float balance = 1 - ((theta - min_theta) / stripe_size);
+            mix_colors(
+                    color_pattern->stripes_colors[i],
+                    NEXT_CYCLIC_ELEMENT(color_pattern->stripes_colors, i, color_pattern->stripes_count),
+                    balance,
+                    color_pattern->factor,
+                    color);
+            return;
         }
-        break;
-
-    case FLAG_TYPE_NB:
-        if (FLAG_4_0 <= theta && FLAG_4_1 > theta) 
-        { /* yellow to white */
-            theta = 1 - ((theta - FLAG_4_0) / (FLAG_4_1 - FLAG_4_0));
-            gen_color(NB__YLW, NB__WHT, theta, NB__FCT, red, green, blue);
-        } 
-        else if (FLAG_4_1 <= theta && FLAG_4_2 > theta) 
-        { /* white to putple */
-            theta = 1 - ((theta - FLAG_4_1) / (FLAG_4_2 - FLAG_4_1));
-            gen_color(NB__WHT, NB__PUR, theta, NB__FCT, red, green, blue);
-        } 
-        else if (FLAG_4_2 <= theta && FLAG_4_3 > theta) 
-        { /* purple to balck */
-            theta = 1 - ((theta - FLAG_4_2) / (FLAG_4_3 - FLAG_4_2));
-            gen_color(NB__PUR, NB__BLK, theta, NB__FCT, red, green, blue);
-        } 
-        else if (FLAG_4_3 <= theta && FLAG_4_4 > theta) 
-        { /* black back to yellow */
-            theta = 1 - ((theta - FLAG_4_3) / (FLAG_4_4 - FLAG_4_3));
-            gen_color(NB__BLK, NB__YLW, theta, NB__FCT, red, green, blue);
-        } 
-        break;
-
-    case FLAG_TYPE_LESBIAN:
-        if (FLAG_5_0 <= theta && FLAG_5_1 > theta) 
-        { /* red to orange */
-            theta = 1 - ((theta - FLAG_5_0) / (FLAG_5_1 - FLAG_5_0));
-            gen_color(LES_RED, LES_ORG, theta, LES_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_1 <= theta && FLAG_5_2 > theta) 
-        { /* orange to white */
-            theta = 1 - ((theta - FLAG_5_1) / (FLAG_5_2 - FLAG_5_1));
-            gen_color(LES_ORG, LES_WHT, theta, LES_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_2 <= theta && FLAG_5_3 > theta) 
-        { /* white to pink */
-            theta = 1 - ((theta - FLAG_5_2) / (FLAG_5_3 - FLAG_5_2));
-            gen_color(LES_WHT, LES_PNK, theta, LES_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_3 <= theta && FLAG_5_4 > theta) 
-        { /* pink to purple */
-            theta = 1 - ((theta - FLAG_5_3) / (FLAG_5_4 - FLAG_5_3));
-            gen_color(LES_PNK, LES_PUR, theta, LES_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_4 <= theta && FLAG_5_5 > theta) 
-        { /* purple back to red */
-            theta = 1 - ((theta - FLAG_5_4) / (FLAG_5_5 - FLAG_5_4));
-            gen_color(LES_PUR, LES_RED, theta, LES_FCT, red, green, blue);
-        }
-        break;
-
-    case FLAG_TYPE_GAY:
-        if (FLAG_5_0 <= theta && FLAG_5_1 > theta) 
-        { /* green1 to green2 */
-            theta = 1 - ((theta - FLAG_5_0) / (FLAG_5_1 - FLAG_5_0));
-            gen_color(GAY_GR1, GAY_GR2, theta, GAY_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_1 <= theta && FLAG_5_2 > theta) 
-        { /* green2 to white */
-            theta = 1 - ((theta - FLAG_5_1) / (FLAG_5_2 - FLAG_5_1));
-            gen_color(GAY_GR2, GAY_WHT, theta, GAY_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_2 <= theta && FLAG_5_3 > theta) 
-        { /* white to blue1 */
-            theta = 1 - ((theta - FLAG_5_2) / (FLAG_5_3 - FLAG_5_2));
-            gen_color(GAY_WHT, GAY_BL1, theta, GAY_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_3 <= theta && FLAG_5_4 > theta) 
-        { /* blue1 to blue2 */
-            theta = 1 - ((theta - FLAG_5_3) / (FLAG_5_4 - FLAG_5_3));
-            gen_color(GAY_BL1, GAY_BL2, theta, GAY_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_4 <= theta && FLAG_5_5 > theta) 
-        { /* blue2 back to green1 */
-            theta = 1 - ((theta - FLAG_5_4) / (FLAG_5_5 - FLAG_5_4));
-            gen_color(GAY_BL2, GAY_GR1, theta, GAY_FCT, red, green, blue);
-        }
-        break;
-
-    case FLAG_TYPE_PAN:
-        if (FLAG_3_0 <= theta && FLAG_3_1 > theta) 
-        { /* pink to yellow */
-            theta = 1 - ((theta - FLAG_3_0) / (FLAG_3_1 - FLAG_3_0));
-            gen_color(PAN_PNK, PAN_YLW, theta, PAN_FCT, red, green, blue);
-        } 
-        else if (FLAG_3_1 <= theta && FLAG_3_2 > theta) 
-        { /* yellow to blue */
-            theta = 1 - ((theta - FLAG_3_1) / (FLAG_3_2 - FLAG_3_1));
-            gen_color(PAN_YLW, PAN_BLU, theta, PAN_FCT, red, green, blue);
-        } 
-        else if (FLAG_3_2 <= theta && FLAG_3_3 > theta) 
-        { /* blue back to pink */
-            theta = 1 - ((theta - FLAG_3_2) / (FLAG_3_3 - FLAG_3_2));
-            gen_color(PAN_BLU, PAN_PNK, theta, PAN_FCT, red, green, blue);
-        } 
-        break;
-
-    case FLAG_TYPE_BI:
-        if (FLAG_5_0 <= theta && FLAG_5_1 > theta) 
-        { /* pink */
-            theta = 1 - ((theta - FLAG_5_0) / (FLAG_5_1 - FLAG_5_0));
-            gen_color(BI__PNK, BI__PNK, theta, BI__FCT, red, green, blue);
-        } 
-        else if (FLAG_5_1 <= theta && FLAG_5_2 > theta) 
-        { /* pink to purple */
-            theta = 1 - ((theta - FLAG_5_1) / (FLAG_5_2 - FLAG_5_1));
-            gen_color(BI__PNK, BI__PUR, theta, BI__FCT, red, green, blue);
-        } 
-        else if (FLAG_5_2 <= theta && FLAG_5_3 > theta) 
-        { /* purple to blue */
-            theta = 1 - ((theta - FLAG_5_2) / (FLAG_5_3 - FLAG_5_2));
-            gen_color(BI__PUR, BI__BLU, theta, BI__FCT, red, green, blue);
-        } 
-        else if (FLAG_5_3 <= theta && FLAG_5_4 > theta) 
-        { /* blue */
-            theta = 1 - ((theta - FLAG_5_3) / (FLAG_5_4 - FLAG_5_3));
-            gen_color(BI__BLU, BI__BLU, theta, BI__FCT, red, green, blue);
-        } 
-        else if (FLAG_5_4 <= theta && FLAG_5_5 > theta) 
-        { /* blue back to pink */
-            theta = 1 - ((theta - FLAG_5_4) / (FLAG_5_5 - FLAG_5_4));
-            gen_color(BI__BLU, BI__PNK, theta, BI__FCT, red, green, blue);
-        } 
-        break;
-
-    case FLAG_TYPE_GENDERFLUID:
-        if (FLAG_5_0 <= theta && FLAG_5_1 > theta) 
-        { /* pink to white */
-            theta = 1 - ((theta - FLAG_5_0) / (FLAG_5_1 - FLAG_5_0));
-            gen_color(GFL_PNK, GFL_WHT, theta, GFL_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_1 <= theta && FLAG_5_2 > theta) 
-        { /* white to purple */
-            theta = 1 - ((theta - FLAG_5_1) / (FLAG_5_2 - FLAG_5_1));
-            gen_color(GFL_WHT, GFL_PUR, theta, GFL_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_2 <= theta && FLAG_5_3 > theta) 
-        { /* purple to black */
-            theta = 1 - ((theta - FLAG_5_2) / (FLAG_5_3 - FLAG_5_2));
-            gen_color(GFL_PUR, GFL_BLK, theta, GFL_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_3 <= theta && FLAG_5_4 > theta) 
-        { /* black to blue */
-            theta = 1 - ((theta - FLAG_5_3) / (FLAG_5_4 - FLAG_5_3));
-            gen_color(GFL_BLK, GFL_BLU, theta, GFL_FCT, red, green, blue);
-        } 
-        else if (FLAG_5_4 <= theta && FLAG_5_5 > theta) 
-        { /* blue back to pink */
-            theta = 1 - ((theta - FLAG_5_4) / (FLAG_5_5 - FLAG_5_4));
-            gen_color(GFL_BLU, GFL_PNK, theta, GFL_FCT, red, green, blue);
-        } 
-        break;
-
-    case FLAG_TYPE_ASEXUAL:
-        if (FLAG_4_0 <= theta && FLAG_4_1 > theta) 
-        { /* black to grey */
-            theta = 1 - ((theta - FLAG_4_0) / (FLAG_4_1 - FLAG_4_0));
-            gen_color(ASE_BLA, ASE_GRE, theta, ASE_FCT, red, green, blue);
-        } 
-        else if (FLAG_4_1 <= theta && FLAG_4_2 > theta) 
-        { /* grey to white */
-            theta = 1 - ((theta - FLAG_4_1) / (FLAG_4_2 - FLAG_4_1));
-            gen_color(ASE_GRE, ASE_WHI, theta, ASE_FCT, red, green, blue);
-        } 
-        else if (FLAG_4_2 <= theta && FLAG_4_3 > theta) 
-        { /* white to purple */
-            theta = 1 - ((theta - FLAG_4_2) / (FLAG_4_3 - FLAG_4_2));
-            gen_color(ASE_WHI, ASE_PUR, theta, ASE_FCT, red, green, blue);
-        } 
-        else if (FLAG_4_3 <= theta && FLAG_4_4 > theta) 
-        { /* purple back to black */
-            theta = 1 - ((theta - FLAG_4_3) / (FLAG_4_4 - FLAG_4_3));
-            gen_color(ASE_PUR, ASE_BLA, theta, ASE_FCT, red, green, blue);
-        } 
-        break;
     }
 }
 
-static size_t get_codes_len(flag_type_t flag_type)
+static void print_color(const pattern_t *pattern, color_type_t color_type, int char_index, int line_index, double freq_h, double freq_v, double offx, int rand_offset, int cc)
 {
-    switch (flag_type)
-    {
-    default:
-    case FLAG_TYPE_RAINBOW:
-        return ARRAY_SIZE(codes);
-        break;
+    float theta;
+    color_t color = { 0 };
 
-    case FLAG_TYPE_TRANS:
-        return ARRAY_SIZE(codes_tra);
-        break;
+    int ncc;
 
-    case FLAG_TYPE_NB:
-        return ARRAY_SIZE(codes_nb);
-        break;
+    switch (color_type) {
+        case COLOR_TYPE_24_BIT:
+            theta = char_index * freq_h / 5.0f + line_index * freq_v + (offx + 2.0f * rand_offset / (float)RAND_MAX) * M_PI;
 
-    case FLAG_TYPE_LESBIAN:
-        return ARRAY_SIZE(codes_les);
-        break;
+            pattern->get_color(&pattern->color_pattern, theta, &color);
+            wprintf(L"\033[38;2;%d;%d;%dm", color.red, color.green, color.blue);
+            break;
 
-    case FLAG_TYPE_GAY:
-        return ARRAY_SIZE(codes_gay);
-        break;
+        case COLOR_TYPE_ANSII:
+            ncc = offx * pattern->ansii_pattern.codes_count + (int)(char_index * freq_h + line_index * freq_v);
+            if (cc != ncc)
+                wprintf(L"\033[38;5;%hhum", pattern->ansii_pattern.ansii_codes[(rand_offset + (cc = ncc)) % pattern->ansii_pattern.codes_count]);
+            break;
 
-    case FLAG_TYPE_PAN:
-        return ARRAY_SIZE(codes_pan);
-        break;
-
-    case FLAG_TYPE_BI:
-        return ARRAY_SIZE(codes_bi);
-        break;
-    
-    case FLAG_TYPE_GENDERFLUID:
-        return ARRAY_SIZE(codes_gfl);
-        break;
-
-    case FLAG_TYPE_ASEXUAL:
-        return ARRAY_SIZE(codes_ase);
-        break;
-    }
-}
-
-static const char* get_codes(flag_type_t flag_type)
-{
-    switch (flag_type)
-    {
-    default:
-    case FLAG_TYPE_RAINBOW:
-        return codes;
-        break;
-
-    case FLAG_TYPE_TRANS:
-        return codes_tra;
-        break;
-
-    case FLAG_TYPE_NB:
-        return codes_nb;
-        break;
-
-    case FLAG_TYPE_LESBIAN:
-        return codes_les;
-        break;
-
-    case FLAG_TYPE_GAY:
-        return codes_gay;
-        break;
-
-    case FLAG_TYPE_PAN:
-        return codes_pan;
-        break;
-
-    case FLAG_TYPE_BI:
-        return codes_bi;
-        break;
-    
-    case FLAG_TYPE_GENDERFLUID:
-        return codes_gfl;
-        break;
-
-    case FLAG_TYPE_ASEXUAL:
-        return codes_ase;
-        break;
+        default:
+            exit(1);
     }
 }
 
 int main(int argc, char** argv)
 {
     char* default_argv[] = { "-" };
-    int cc = -1, i, l = 0;
-    wint_t c;
-    int colors    = isatty(STDOUT_FILENO);
-    int force_locale = 1;
-    int random = 0;
-    int rgb = 0;
-    double freq_h = 0.23, freq_v = 0.1;
+    int cc = -1;
+    int i = 0;
+    int char_index = 0;
+    int line_index = 0;
+    wint_t current_char = '\0';
+    bool print_colors = isatty(STDOUT_FILENO);
+    bool force_locale = true;
+    bool random = false;
+    color_type_t color_type = COLOR_TYPE_ANSII;
+    double freq_h = 0.23;
+    double freq_v = 0.1;
     flag_type_t flag_type = FLAG_TYPE_RAINBOW;
+    const pattern_t *pattern;
 
     struct timeval tv;
     gettimeofday(&tv, NULL);
     double offx = (tv.tv_sec % 300) / 300.0;
 
+    /* Handle flags. */
     for (i = 1; i < argc; i++) {
         char* endptr;
         if (!strcmp(argv[i], "-f") || !strcmp(argv[i], "--flag")) {
@@ -537,13 +519,13 @@ int main(int argc, char** argv)
                 usage();
             }
         } else if (!strcmp(argv[i], "-F") || !strcmp(argv[i], "--force-color")) {
-            colors = 1;
+            print_colors = true;
         } else if (!strcmp(argv[i], "-l") || !strcmp(argv[i], "--no-force-locale")) {
-            force_locale = 0;
+            force_locale = false;
         } else if (!strcmp(argv[i], "-r") || !strcmp(argv[i], "--random")) {
-            random = 1;
+            random = true;
         } else if (!strcmp(argv[i], "-b") || !strcmp(argv[i], "--24bit")) {
-            rgb = 1;
+            color_type = COLOR_TYPE_24_BIT;
         } else if (!strcmp(argv[i], "--version")) {
             version();
         } else {
@@ -553,11 +535,14 @@ int main(int argc, char** argv)
         }
     }
 
+    /* Handle randomness. */
     int rand_offset = 0;
     if (random) {
         srand(time(NULL));
         rand_offset = rand();
     }
+
+    /* Get inputs. */
     char** inputs = argv + i;
     char** inputs_end = argv + argc;
     if (inputs == inputs_end) {
@@ -565,6 +550,7 @@ int main(int argc, char** argv)
         inputs_end = inputs + 1;
     }
 
+    /* Handle locale. */
     char* env_lang = getenv("LANG");
     if (force_locale && env_lang && !strstr(env_lang, "UTF-8")) {
         if (!setlocale(LC_ALL, "C.UTF-8")) { /* C.UTF-8 may not be available on all platforms */
@@ -574,12 +560,16 @@ int main(int argc, char** argv)
         setlocale(LC_ALL, "");
     }
 
-    i = 0;
+    /* Get pattern. */
+    pattern = get_pattern(flag_type);
+
+    /* For file in inputs. */
     for (char** filename = inputs; filename < inputs_end; filename++) {
         wint_t (*this_file_read_wchar)(FILE*); /* Used for --help because fmemopen is universally broken when used with fgetwc */
         FILE* f;
-        int escape_state = 0;
+        escape_state_t escape_state = ESCAPE_STATE_OUT;
 
+        /* Handle "--help", "-" (STDIN) and file names. */
         if (!strcmp(*filename, "--help")) {
             this_file_read_wchar = &helpstr_hack;
             f = 0;
@@ -597,43 +587,36 @@ int main(int argc, char** argv)
             }
         }
 
-        while ((c = this_file_read_wchar(f)) != WEOF) {
-            if (colors) {
-                find_escape_sequences(c, &escape_state);
+        /* While there are chars to read. */
+        while ((current_char = this_file_read_wchar(f)) != WEOF) {
 
-                if (!escape_state) {
-                    if (c == '\n') {
-                        l++;
-                        i = 0;
+            /* If set to print colors, handle the colors. */
+            if (print_colors) {
 
+                /* Skip escape sequences. */
+                find_escape_sequences(current_char, &escape_state);
+                if (escape_state == ESCAPE_STATE_OUT) {
+
+                    /* Handle newlines. */
+                    if (current_char == '\n') {
+                        line_index++;
+                        char_index = 0;
                     } else {
-                        if (rgb) {
-                            i += wcwidth(c);
-                            float theta = i * freq_h / 5.0f + l * freq_v + (offx + 2.0f * rand_offset / RAND_MAX) * M_PI;
-                            float offset = 0.1;
-
-                            uint8_t red = 0;
-                            uint8_t green = 0;
-                            uint8_t blue = 0;
-                            get_color(flag_type, offset, theta, &red, &green, &blue);
-                            wprintf(L"\033[38;2;%d;%d;%dm", red, green, blue);
-
-                        } else {
-                            int ncc = offx * get_codes_len(flag_type) + (int)((i += wcwidth(c)) * freq_h + l * freq_v);
-                            if (cc != ncc)
-                                wprintf(L"\033[38;5;%hhum", get_codes(flag_type)[(rand_offset + (cc = ncc)) % get_codes_len(flag_type)]);
-                        }
+                        char_index += wcwidth(current_char);
+                        print_color(pattern, color_type, char_index, line_index, freq_h, freq_v, offx, rand_offset, cc);
                     }
                 }
             }
 
-            putwchar(c);
+            /* Print the char. */
+            putwchar(current_char);
 
-            if (escape_state == 2) /* implies "colors" */
-                wprintf(L"\033[38;5;%hhum", codes[(rand_offset + cc) % ARRAY_SIZE(codes)]);
+            if (escape_state == ESCAPE_STATE_LAST) {  /* implies "print_colors" */
+                print_color(pattern, color_type, char_index, line_index, freq_h, freq_v, offx, rand_offset, cc);
+            }
         }
 
-        if (colors)
+        if (print_colors)
             wprintf(L"\033[0m");
 
         cc = -1;
