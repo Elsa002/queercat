@@ -44,8 +44,9 @@ static char helpstr[] = "\n"
                         "With no FILE, or when FILE is -, read standard input.\n"
                         "\n"
                         "--flag <d>                , -f <d>: Choose colors to use:\n"
-                        "                                    [rainbow: 0, trans: 1, NB: 2, lesbian: 3, \n"
-                        "                                    gay: 4, pan: 5, bi: 6, genderfluid: 7, asexual: 8]\n"
+                        "                                    [rainbow: 0, trans: 1, NB: 2, lesbian: 3,\n"
+                        "                                    gay: 4, pan: 5, bi: 6, genderfluid: 7, asexual: 8,\n"
+                        "                                    unlabeled: 9]\n"
                         "                                    default is rainbow (0)\n"
                         "--horizontal-frequency <d>, -h <d>: Horizontal rainbow frequency (default: 0.23)\n"
                         "  --vertical-frequency <d>, -v <d>: Vertical rainbow frequency (default: 0.1)\n"
@@ -125,6 +126,7 @@ typedef enum flag_type_e
     FLAG_TYPE_BI,
     FLAG_TYPE_GENDERFLUID,
     FLAG_TYPE_ASEXUAL,
+    FLAG_TYPE_UNLABELED,
     FLAG_TYPE_END
 } flag_type_t;
 
@@ -302,6 +304,25 @@ const pattern_t asexual = {
     .get_color = get_color_stripes
 };
 
+const pattern_t unlabeled = {
+    .name = "unlabeled",
+    .ansii_pattern = {
+        .codes_count = 8,
+        .ansii_codes = {194, 194, 255, 255, 195, 195, 223, 223}
+    },
+    .color_pattern = {
+        .stripes_count = 4,
+        .stripes_colors = {
+            0xe6f9e3, /* #e6f9e3 - Green */
+            0xfdfdfb, /* #fdfdfb - White */
+            0xdeeff9, /* #deeff9 - Blue */
+            0xfae1c2  /* #fae1c2 - Orange */
+        },
+        .factor = 4.0f
+    },
+    .get_color = get_color_stripes
+};
+
 
 /* *** Functions Declarations ****************************************/
 /* Info */
@@ -381,6 +402,9 @@ static const pattern_t *get_pattern(flag_type_t flag_type)
 
         case FLAG_TYPE_ASEXUAL:
             return &asexual;
+
+        case FLAG_TYPE_UNLABELED:
+            return &unlabeled;
 
         default:
             return NULL;
