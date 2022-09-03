@@ -328,48 +328,51 @@ const pattern_t unlabeled = {
 const pattern_t aromantic = {
     .name = "aromantic",
     .ansii_pattern = {
-      .codes_count = 10,
-      .ansii_codes = {
-        34, 34,
-        120, 120,
-        255, 255,
-        247, 247,
-        233, 233
-      }
-    },
-    .color_pattern = {
-      .stripes_count = 5,
-      .stripes_colors = {
-          0x3da542, // Green
-          0xa8d379, // Light green
-          0xffffff, // White
-          0xa9a9a9, // Grey
-          0x000000  // Black
+        .codes_count = 10,
+        .ansii_codes = {
+            34, 34,
+            120, 120,
+            255, 255,
+            247, 247,
+            233, 233
+          }
       },
-      .factor = 1.0f
-    },
-    .get_color = get_color_stripes
+    .color_pattern = {
+        .stripes_count = 5,
+        .stripes_colors = {
+            0x3da542, /* #3da542 - Green        */
+            0xa8d379, /* #a8d379 - Light green  */
+            0xffffff, /* #ffffff - White        */
+            0xa9a9a9, /* #a9a9a9 - Grey         */
+            0x000000  /* #000000 - Black        */
+        },
+        .factor = 1.0f
+      },
+      .get_color = get_color_stripes
 };
 
 const pattern_t aroace = {
     .name = "aroace",
     .ansii_pattern = {
-      208, 208,
-      220, 220,
-      255, 255,
-      75, 75,
-      62, 62
-    },
-    .color_pattern = {
-      .stripes_count = 5,
-      .stripes_colors = {
-        0xe28d00,
-        0xeccd00,
-        0xffffff,
-        0x62afdd,
-        0x203756
+        .codes_count = 10,
+        .ansii_codes = {
+            208, 208,
+            220, 220,
+            255, 255,
+            75, 75,
+            62, 62
+          },
       },
-      .factor = 1.0f
+      .color_pattern = {
+          .stripes_count = 5,
+          .stripes_colors = {
+              0xe28d00, /* #e28d00 - Orange     */
+              0xeccd00, /* #eccd00 - Yellow     */
+              0xffffff, /* #ffffff - White      */
+              0x62afdd, /* #62afdd - Light blue */
+              0x203756  /* #203756 - Blue       */
+        },
+        .factor = 1.0f
     },
     .get_color = get_color_stripes
 };
