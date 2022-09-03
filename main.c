@@ -559,7 +559,7 @@ int main(int argc, char** argv)
         }
     }
 
-    if (flag_type >= FLAG_TYPE_END) {
+    if (flag_type <= FLAG_TYPE_INVALID || flag_type >= FLAG_TYPE_END) {
         fprintf(stderr, "Invalid flag: %d\n", flag_type);
         exit(1);
     }
