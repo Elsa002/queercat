@@ -559,10 +559,10 @@ int main(int argc, char** argv)
         }
     }
 
-	if (flag_type >= FLAG_TYPE_END) {
-		fprintf(stderr, "Invalid flag: %d\n", flag_type);
-		exit(1);
-	}
+    if (flag_type >= FLAG_TYPE_END) {
+        fprintf(stderr, "Invalid flag: %d\n", flag_type);
+        exit(1);
+    }
 
     /* Handle randomness. */
     int rand_offset = 0;
