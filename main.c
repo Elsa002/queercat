@@ -46,7 +46,7 @@ static char helpstr[] = "\n"
                         "--flag <d>                , -f <d>: Choose colors to use:\n"
                         "                                    [rainbow: 0, trans: 1, NB: 2, lesbian: 3,\n"
                         "                                    gay: 4, pan: 5, bi: 6, genderfluid: 7, asexual: 8,\n"
-                        "                                    unlabeled: 9]\n"
+                        "                                    unlabeled: 9, aromantic: 10, aroace: 11]\n"
                         "                                    default is rainbow (0)\n"
                         "--horizontal-frequency <d>, -h <d>: Horizontal rainbow frequency (default: 0.23)\n"
                         "  --vertical-frequency <d>, -v <d>: Vertical rainbow frequency (default: 0.1)\n"
@@ -127,6 +127,8 @@ typedef enum flag_type_e
     FLAG_TYPE_GENDERFLUID,
     FLAG_TYPE_ASEXUAL,
     FLAG_TYPE_UNLABELED,
+    FLAG_TYPE_AROMANTIC,
+    FLAG_TYPE_AROACE,
     FLAG_TYPE_END
 } flag_type_t;
 
@@ -323,6 +325,58 @@ const pattern_t unlabeled = {
     .get_color = get_color_stripes
 };
 
+const pattern_t aromantic = {
+    .name = "aromantic",
+    .ansii_pattern = {
+        .codes_count = 10,
+        .ansii_codes = {
+            34, 34,
+            120, 120,
+            255, 255,
+            247, 247,
+            233, 233
+          }
+      },
+    .color_pattern = {
+        .stripes_count = 5,
+        .stripes_colors = {
+            0x3da542, /* #3da542 - Green        */
+            0xa8d379, /* #a8d379 - Light green  */
+            0xffffff, /* #ffffff - White        */
+            0xa9a9a9, /* #a9a9a9 - Grey         */
+            0x000000  /* #000000 - Black        */
+        },
+        .factor = 1.0f
+      },
+      .get_color = get_color_stripes
+};
+
+const pattern_t aroace = {
+    .name = "aroace",
+    .ansii_pattern = {
+        .codes_count = 10,
+        .ansii_codes = {
+            208, 208,
+            220, 220,
+            255, 255,
+            75, 75,
+            62, 62
+          },
+      },
+      .color_pattern = {
+          .stripes_count = 5,
+          .stripes_colors = {
+              0xe28d00, /* #e28d00 - Orange     */
+              0xeccd00, /* #eccd00 - Yellow     */
+              0xffffff, /* #ffffff - White      */
+              0x62afdd, /* #62afdd - Light blue */
+              0x203756  /* #203756 - Blue       */
+        },
+        .factor = 1.0f
+    },
+    .get_color = get_color_stripes
+};
+
 
 /* *** Functions Declarations ****************************************/
 /* Info */
@@ -405,6 +459,12 @@ static const pattern_t *get_pattern(flag_type_t flag_type)
 
         case FLAG_TYPE_UNLABELED:
             return &unlabeled;
+
+        case FLAG_TYPE_AROMANTIC:
+            return &aromantic;
+
+        case FLAG_TYPE_AROACE:
+            return &aroace;
 
         default:
             return NULL;
