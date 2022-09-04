@@ -37,37 +37,6 @@ typedef enum escape_state_e {
 
 
 /* *** Constants *****************************************************/
-static char helpstr[] = "\n"
-                        "Usage: queercat [-f flag_number][-h horizontal_speed] [-v vertical_speed] [--] [FILES...]\n"
-                        "\n"
-                        "Concatenate FILE(s), or standard input, to standard output.\n"
-                        "With no FILE, or when FILE is -, read standard input.\n"
-                        "\n"
-                        "--flag <d>                , -f <d>: Choose colors to use:\n"
-                        "                                    [rainbow: 0, trans: 1, NB: 2, lesbian: 3,\n"
-                        "                                    gay: 4, pan: 5, bi: 6, genderfluid: 7, asexual: 8,\n"
-                        "                                    unlabeled: 9, aromantic: 10, aroace: 11]\n"
-                        "                                    default is rainbow (0)\n"
-                        "--horizontal-frequency <d>, -h <d>: Horizontal rainbow frequency (default: 0.23)\n"
-                        "  --vertical-frequency <d>, -v <d>: Vertical rainbow frequency (default: 0.1)\n"
-                        "                 --force-color, -F: Force color even when stdout is not a tty\n"
-                        "             --no-force-locale, -l: Use encoding from system locale instead of\n"
-                        "                                    assuming UTF-8\n"
-                        "                      --random, -r: Random colors\n"
-                        "                       --24bit, -b: Output in 24-bit \"true\" RGB mode (slower and\n"
-                        "                                    not supported by all terminals)\n"
-                        "                         --version: Print version and exit\n"
-                        "                            --help: Show this message\n"
-                        "\n"
-                        "Examples:\n"
-                        "  queercat f - g      Output f's contents, then stdin, then g's contents.\n"
-                        "  queercat            Copy standard input to standard output.\n"
-                        "  fortune | queercat  Display a rainbow cookie.\n"
-                        "\n"
-                        "Report queercat bugs to <https://github.com/elsa002/queercat/issues>\n"
-                        "queercat home page: <https://github.com/elsa002/queercat/>\n"
-                        "base for code: <https://github.com/jaseg/lolcat/>\n"
-                        "Original idea: <https://github.com/busyloop/lolcat/>\n";
 
 #define MAX_FLAG_STRIPES (6)
 #define MAX_ANSII_CODES_PER_STRIPE (5)
@@ -112,6 +81,9 @@ typedef struct pattern_s {
     const color_pattern_t color_pattern;
     get_color_f *get_color;
 } pattern_t;
+
+/* *** A Single Global ***********************************************/
+char *helpstr;
 
 /* *** Pattern Functions *********************************************/
 get_color_f get_color_rainbow;
@@ -368,6 +340,7 @@ static void usage(void);
 static void version(void);
 
 /* Helpers */
+static void build_helpstr();
 static void find_escape_sequences(wint_t current_char, escape_state_t *state);
 static wint_t helpstr_hack(FILE * _ignored);
 
@@ -386,6 +359,78 @@ static void version(void)
 {
     wprintf(L"queercat version 2.0, (c) 2022 elsa002\n");
     exit(0);
+}
+
+static void build_helpstr()
+{
+    if(helpstr != NULL)
+        return;
+
+    static char helpstr_head[] = "\n"
+        "Usage: queercat [-f flag_number][-h horizontal_speed] [-v vertical_speed] [--] [FILES...]\n"
+        "\n"
+        "Concatenate FILE(s), or standard input, to standard output.\n"
+        "With no FILE, or when FILE is -, read standard input.\n"
+        "\n"
+        "                --flag <d>, -f <d>: Choose colors to use (default: 0 (rainbow)):\n";
+
+    static char helpstr_indent[] = "                                      ";
+
+    static char helpstr_tail[] =
+        "--horizontal-frequency <d>, -h <d>: Horizontal rainbow frequency (default: 0.23)\n"
+        "  --vertical-frequency <d>, -v <d>: Vertical rainbow frequency (default: 0.1)\n"
+        "                 --force-color, -F: Force color even when stdout is not a tty\n"
+        "             --no-force-locale, -l: Use encoding from system locale instead of\n"
+        "                                    assuming UTF-8\n"
+        "                      --random, -r: Random colors\n"
+        "                       --24bit, -b: Output in 24-bit \"true\" RGB mode (slower and\n"
+        "                                    not supported by all terminals)\n"
+        "                         --version: Print version and exit\n"
+        "                            --help: Show this message\n"
+        "\n"
+        "Examples:\n"
+        "  queercat f - g      Output f's contents, then stdin, then g's contents.\n"
+        "  queercat            Copy standard input to standard output.\n"
+        "  fortune | queercat  Display a rainbow cookie.\n"
+        "\n"
+        "Report queercat bugs to <https://github.com/elsa002/queercat/issues>\n"
+        "queercat home page: <https://github.com/elsa002/queercat/>\n"
+        "base for code: <https://github.com/jaseg/lolcat/>\n"
+        "Original idea: <https://github.com/busyloop/lolcat/>\n";
+
+    /* old version of what this generates, for reference:
+     * "                                    [rainbow: 0, trans: 1, NB: 2, lesbian: 3,\n"
+     * "                                    gay: 4, pan: 5, bi: 6, genderfluid: 7, asexual: 8,\n"
+     * "                                    unlabeled: 9, aromantic: 10, aroace: 11]\n"
+     * would be nice to have the dynamic word-wrap back, but that's
+     * more clever than I currently feel like trying to be
+     */
+    const int line_max_len = strlen(helpstr_indent) + MAX_FLAG_NAME_LENGTH + strlen(": 000\n") ;
+    char lines[FLAG_COUNT][line_max_len];
+    size_t lines_total_len = 0;
+
+    for(int i = 0; i < FLAG_COUNT; ++i) {
+        lines_total_len += snprintf(lines[i], line_max_len, "%s%s: %d\n", helpstr_indent, flags[i].name, i);
+    }
+
+    size_t helpstr_len = strlen(helpstr_head) + lines_total_len + strlen(helpstr_tail);
+
+    char *out = malloc(helpstr_len);
+    char *out_pos = out;
+
+    out_pos = mempcpy(out, helpstr_head, strlen(helpstr_head));
+
+    for(int i = 0; i < FLAG_COUNT; ++i) {
+        char* this_line = lines[i];
+        out_pos = mempcpy(out_pos, this_line, strlen(this_line));
+    }
+
+    memcpy(out_pos, helpstr_tail, strlen(helpstr_tail));
+
+    // TODO maybe free() this at some point? should be cleaned up at program exit, but
+    // it feels a bit gross to rely on that... could refactor helpstr_hack to not rely
+    // on helpstr being global maybe?
+    helpstr = out;
 }
 
 static void find_escape_sequences(wint_t current_char, escape_state_t *state)
@@ -513,6 +558,8 @@ int main(int argc, char** argv)
     struct timeval tv;
     gettimeofday(&tv, NULL);
     double offx = (tv.tv_sec % 300) / 300.0;
+
+    build_helpstr();
 
     /* Handle flags. */
     for (i = 1; i < argc; i++) {

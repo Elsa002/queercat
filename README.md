@@ -19,6 +19,7 @@ With no FILE, or when FILE is -, read standard input.
                          --version: Print version and exit  
                             --help: Show this message
 ```
+(Flag list above may not be up to date; run `queercat --help` to see which flags your version supports!)
 
 ## Adding a flag
 ### Step 1: Define the pattern
@@ -53,24 +54,10 @@ Example:
 };
 ```
 
-### Step 2: Add in the `README.md` and help string.
+### Step 2 (optional): Update `README.md` to include your addition.
 **Pay attention to the number it gets from its position in the array!**
 
-`main.c`
-``` c
-/* *** Constants *****************************************************/
-static char helpstr[] = "\n"
-                        ...
-                        "--flag <d>                , -f <d>: Choose colors to use:\n"
-                        "                                    [rainbow: 0, trans: 1, NB: 2, lesbian: 3, \n"
-                        "                                    gay: 4, pan: 5, bi: 6, genderfluid: 7, asexual: 8, \n"
-                        "                                    your_new_flag: 9]\n"
-                        "                                    default is rainbow (0)\n"
-                        ...
-```
-
-`README.md`
-Extend the line for `--flag` under `Usage` the same way as in the `main.c`.
+Extend the line for `--flag` under `Usage`.
 
 *Note that in the readme it is a single line.*
 
