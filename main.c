@@ -361,7 +361,8 @@ static void version(void)
     exit(0);
 }
 
-static void build_helpstr() {
+static void build_helpstr()
+{
     if(helpstr != NULL)
         return;
 
