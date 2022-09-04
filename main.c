@@ -113,8 +113,6 @@ typedef struct pattern_s {
     get_color_f *get_color;
 } pattern_t;
 
-typedef size_t flag_type_t;
-
 /* *** Pattern Functions *********************************************/
 get_color_f get_color_rainbow;
 get_color_f get_color_stripes;
@@ -374,7 +372,6 @@ static void find_escape_sequences(wint_t current_char, escape_state_t *state);
 static wint_t helpstr_hack(FILE * _ignored);
 
 /* Colors handling */
-static const pattern_t *get_pattern(flag_type_t flag_type);
 static void mix_colors(uint32_t color1, uint32_t color2, float balance, float factor, color_t *output_color);
 static void print_color(const pattern_t *pattern, color_type_t color_type, int char_index, int line_index, double freq_h, double freq_v, double offx, int rand_offset, int cc);
 
@@ -411,11 +408,6 @@ static wint_t helpstr_hack(FILE * _ignored)
         return c;
     idx = 0;
     return WEOF;
-}
-
-static const pattern_t *get_pattern(flag_type_t flag_type)
-{
-    return &flags[flag_type];
 }
 
 static void mix_colors(uint32_t color1, uint32_t color2, float balance, float factor, color_t *output_color)
@@ -515,7 +507,7 @@ int main(int argc, char** argv)
     color_type_t color_type = COLOR_TYPE_ANSII;
     double freq_h = 0.23;
     double freq_v = 0.1;
-    flag_type_t flag_type = 0; // default to rainbow
+    int flag_type = 0; // default to rainbow
     const pattern_t *pattern;
 
     struct timeval tv;
@@ -527,7 +519,8 @@ int main(int argc, char** argv)
         char* endptr;
         if (!strcmp(argv[i], "-f") || !strcmp(argv[i], "--flag")) {
             if ((++i) < argc) {
-                flag_type = (flag_type_t)strtod(argv[i], &endptr);
+                // TODO? use strtoul instead of strtod?
+                flag_type = (int)strtod(argv[i], &endptr);
                 if (*endptr)
                     usage();
             } else {
@@ -566,10 +559,13 @@ int main(int argc, char** argv)
         }
     }
 
+    /* Get pattern. */
     if (flag_type < 0 || flag_type >= FLAG_COUNT) {
         fprintf(stderr, "Invalid flag: %d\n", flag_type);
         exit(1);
     }
+
+    pattern = &flags[flag_type];
 
     /* Handle randomness. */
     int rand_offset = 0;
@@ -595,9 +591,6 @@ int main(int argc, char** argv)
     } else {
         setlocale(LC_ALL, "");
     }
-
-    /* Get pattern. */
-    pattern = get_pattern(flag_type);
 
     /* For file in inputs. */
     for (char** filename = inputs; filename < inputs_end; filename++) {
