@@ -343,6 +343,7 @@ static void version(void);
 static void build_helpstr();
 static void find_escape_sequences(wint_t current_char, escape_state_t *state);
 static wint_t helpstr_hack(FILE * _ignored);
+static const pattern_t * lookup_pattern(const char *name);
 
 /* Colors handling */
 static void mix_colors(uint32_t color1, uint32_t color2, float balance, float factor, color_t *output_color);
@@ -455,6 +456,26 @@ static wint_t helpstr_hack(FILE * _ignored)
     return WEOF;
 }
 
+/* returns NULL on failure */
+static const pattern_t * lookup_pattern(const char *name)
+{
+    // check for name matches
+    for(int i = 0; i < FLAG_COUNT; ++i) {
+        if(!strcmp(name, flags[i].name))
+            return &flags[i];
+    }
+
+    // try number matches
+    char *endptr;
+    int flag_num = (int)strtoul(name, &endptr, 10);
+
+    // left-over charaters, or number out of range
+    if(*endptr || (flag_num < 0 || flag_num >= FLAG_COUNT))
+        return NULL;
+
+    return &flags[flag_num];
+}
+
 static void mix_colors(uint32_t color1, uint32_t color2, float balance, float factor, color_t *output_color)
 {
     uint8_t red_1   = (color1 & 0xff0000) >> 16;
@@ -552,8 +573,7 @@ int main(int argc, char** argv)
     color_type_t color_type = COLOR_TYPE_ANSII;
     double freq_h = 0.23;
     double freq_v = 0.1;
-    int flag_type = 0; // default to rainbow
-    const pattern_t *pattern;
+    char* flag_type = "rainbow";
 
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -566,10 +586,7 @@ int main(int argc, char** argv)
         char* endptr;
         if (!strcmp(argv[i], "-f") || !strcmp(argv[i], "--flag")) {
             if ((++i) < argc) {
-                // TODO? use strtoul instead of strtod?
-                flag_type = (int)strtod(argv[i], &endptr);
-                if (*endptr)
-                    usage();
+                flag_type = argv[i];
             } else {
                 usage();
             }
@@ -607,12 +624,11 @@ int main(int argc, char** argv)
     }
 
     /* Get pattern. */
-    if (flag_type < 0 || flag_type >= FLAG_COUNT) {
-        fprintf(stderr, "Invalid flag: %d\n", flag_type);
+    const pattern_t *pattern = lookup_pattern(flag_type);
+    if (pattern == NULL) {
+        fprintf(stderr, "Invalid flag: %s\n", flag_type);
         exit(1);
     }
-
-    pattern = &flags[flag_type];
 
     /* Handle randomness. */
     int rand_offset = 0;
