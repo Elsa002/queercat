@@ -1,4 +1,5 @@
 #define _XOPEN_SOURCE
+#define _GNU_SOURCE
 
 /* *** Includes ******************************************************/
 #include <stdbool.h>
