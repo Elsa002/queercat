@@ -113,25 +113,7 @@ typedef struct pattern_s {
     get_color_f *get_color;
 } pattern_t;
 
-/* Patterns enum. */
-typedef enum flag_type_e
-{
-    FLAG_TYPE_INVALID = -1,
-    FLAG_TYPE_RAINBOW = 0,
-    FLAG_TYPE_TRANS,
-    FLAG_TYPE_NB,
-    FLAG_TYPE_LESBIAN,
-    FLAG_TYPE_GAY,
-    FLAG_TYPE_PAN,
-    FLAG_TYPE_BI,
-    FLAG_TYPE_GENDERFLUID,
-    FLAG_TYPE_ASEXUAL,
-    FLAG_TYPE_UNLABELED,
-    FLAG_TYPE_AROMANTIC,
-    FLAG_TYPE_AROACE,
-    FLAG_TYPE_END
-} flag_type_t;
-
+typedef size_t flag_type_t;
 
 /* *** Pattern Functions *********************************************/
 get_color_f get_color_rainbow;
@@ -380,6 +362,7 @@ const pattern_t flags[] = {
     /* Add new flags above this line. */
 };
 
+const int FLAG_COUNT = sizeof(flags)/sizeof(flags[0]);
 
 /* *** Functions Declarations ****************************************/
 /* Info */
@@ -532,7 +515,7 @@ int main(int argc, char** argv)
     color_type_t color_type = COLOR_TYPE_ANSII;
     double freq_h = 0.23;
     double freq_v = 0.1;
-    flag_type_t flag_type = FLAG_TYPE_RAINBOW;
+    flag_type_t flag_type = 0; // default to rainbow
     const pattern_t *pattern;
 
     struct timeval tv;
@@ -583,7 +566,7 @@ int main(int argc, char** argv)
         }
     }
 
-    if (flag_type <= FLAG_TYPE_INVALID || flag_type >= FLAG_TYPE_END) {
+    if (flag_type < 0 || flag_type >= FLAG_COUNT) {
         fprintf(stderr, "Invalid flag: %d\n", flag_type);
         exit(1);
     }

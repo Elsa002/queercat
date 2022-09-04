@@ -53,26 +53,8 @@ Example:
 };
 ```
 
-### Step 2: Add to the enum
-Next, add a new value at the end of the enum `flag_type_t` (just before `FLAG_TYPE_END`). If you've added more than
-new flag, be sure their order here matches their order in the `flags` array!
-
-``` c
-/* Patterns enum. */
-typedef enum flag_type_e
-{
-    FLAG_TYPE_INVALID = -1,
-    FLAG_TYPE_RAINBOW = 0,
-    FLAG_TYPE_TRANS,
-    ...
-    FLAG_TYPE_ASEXUAL,
-    /* FLAG_TYPE_YOUR_NEW_FLAG goes here. */
-    FLAG_TYPE_END
-} flag_type_t;
-```
-
-### Step 3: Add in the `README.md` and help string.
-**Pay attention to the number it gets from the enum!**
+### Step 2: Add in the `README.md` and help string.
+**Pay attention to the number it gets from its position in the array!**
 
 `main.c`
 ``` c
@@ -92,7 +74,7 @@ Extend the line for `--flag` under `Usage` the same way as in the `main.c`.
 
 *Note that in the readme it is a single line.*
 
-### Step 4: Pull request :)
+### Step 3: Pull request :)
 
 ## Compiling
 to compile with gcc: `$ gcc main.c -lm -o queercat`  
