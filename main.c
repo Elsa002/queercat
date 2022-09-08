@@ -342,6 +342,7 @@ static void version(void);
 
 /* Helpers */
 static void build_helpstr(void);
+static void cleanup_helpstr(void);
 static void find_escape_sequences(wint_t current_char, escape_state_t *state);
 static wint_t helpstr_hack(FILE * _ignored);
 static const pattern_t * lookup_pattern(const char *name);
@@ -429,10 +430,14 @@ static void build_helpstr(void)
 
     memcpy(out_pos, helpstr_tail, strlen(helpstr_tail));
 
-    // TODO maybe free() this at some point? should be cleaned up at program exit, but
-    // it feels a bit gross to rely on that... could refactor helpstr_hack to not rely
-    // on helpstr being global maybe?
+    // TODO? maybe refactor helpstr_hack to not rely on helpstr being global to avoid needing to use atexit
     helpstr = out;
+    atexit(cleanup_helpstr);
+}
+
+static void cleanup_helpstr(void)
+{
+    free(helpstr);
 }
 
 static void find_escape_sequences(wint_t current_char, escape_state_t *state)
