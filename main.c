@@ -341,7 +341,7 @@ static void usage(void);
 static void version(void);
 
 /* Helpers */
-static void build_helpstr();
+static void build_helpstr(void);
 static void find_escape_sequences(wint_t current_char, escape_state_t *state);
 static wint_t helpstr_hack(FILE * _ignored);
 static const pattern_t * lookup_pattern(const char *name);
@@ -363,7 +363,7 @@ static void version(void)
     exit(0);
 }
 
-static void build_helpstr()
+static void build_helpstr(void)
 {
     if(helpstr != NULL)
         return;
