@@ -108,12 +108,12 @@ const pattern_t flags[] = {
         .name = "transgender",
         .ansii_pattern = {
             .codes_count = 10,
-            .ansii_codes = {117, 117,  225, 225,  255, 255,  225, 225,  117, 117}
+            .ansii_codes = {81, 81, 217, 217,  231, 231,  217, 217,  81, 81}
         },
         .color_pattern = {
             .stripes_count = 5,
             .stripes_colors = {
-                0x55cdfc, /* #55cdfd - Blue */
+                0x55cdfc, /* #55cdfc - Blue */
                 0xf7a8b8, /* #f7a8b8 - Pink */
                 0xffffff, /* #ffffff - White */
                 0xf7a8b8, /* #f7a8b8 - Pink */
