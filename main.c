@@ -382,6 +382,7 @@ static void build_helpstr(void)
     static char helpstr_tail[] =
         "--horizontal-frequency <d>, -h <d>: Horizontal rainbow frequency (default: 0.23)\n"
         "  --vertical-frequency <d>, -v <d>: Vertical rainbow frequency (default: 0.1)\n"
+        "              --offset <d>, -o <d>: Offset of the start of the flag\n"
         "                 --force-color, -F: Force color even when stdout is not a tty\n"
         "             --no-force-locale, -l: Use encoding from system locale instead of\n"
         "                                    assuming UTF-8\n"
@@ -599,6 +600,14 @@ int main(int argc, char** argv)
         } else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--horizontal-frequency")) {
             if ((++i) < argc) {
                 freq_h = strtod(argv[i], &endptr);
+                if (*endptr)
+                    usage();
+            } else {
+                usage();
+            }
+        } else if (!strcmp(argv[i], "-o") || !strcmp(argv[i], "--offset")) {
+            if ((++i) < argc) {
+                offx = strtod(argv[i], &endptr) / 10;
                 if (*endptr)
                     usage();
             } else {
