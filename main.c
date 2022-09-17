@@ -607,7 +607,7 @@ int main(int argc, char** argv)
             }
         } else if (!strcmp(argv[i], "-o") || !strcmp(argv[i], "--offset")) {
             if ((++i) < argc) {
-                offx = strtod(argv[i], &endptr) / 10;
+                offx = strtod(argv[i], &endptr);
                 if (*endptr)
                     usage();
             } else {
