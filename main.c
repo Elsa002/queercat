@@ -108,12 +108,12 @@ const pattern_t flags[] = {
         .name = "transgender",
         .ansii_pattern = {
             .codes_count = 10,
-            .ansii_codes = {117, 117,  225, 225,  255, 255,  225, 225,  117, 117}
+            .ansii_codes = {81, 81, 217, 217,  231, 231,  217, 217,  81, 81}
         },
         .color_pattern = {
             .stripes_count = 5,
             .stripes_colors = {
-                0x55cdfc, /* #55cdfd - Blue */
+                0x55cdfc, /* #55cdfc - Blue */
                 0xf7a8b8, /* #f7a8b8 - Pink */
                 0xffffff, /* #ffffff - White */
                 0xf7a8b8, /* #f7a8b8 - Pink */
@@ -382,6 +382,7 @@ static void build_helpstr(void)
     static char helpstr_tail[] =
         "--horizontal-frequency <d>, -h <d>: Horizontal rainbow frequency (default: 0.23)\n"
         "  --vertical-frequency <d>, -v <d>: Vertical rainbow frequency (default: 0.1)\n"
+        "              --offset <d>, -o <d>: Offset of the start of the flag\n"
         "                 --force-color, -F: Force color even when stdout is not a tty\n"
         "             --no-force-locale, -l: Use encoding from system locale instead of\n"
         "                                    assuming UTF-8\n"
@@ -599,6 +600,14 @@ int main(int argc, char** argv)
         } else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--horizontal-frequency")) {
             if ((++i) < argc) {
                 freq_h = strtod(argv[i], &endptr);
+                if (*endptr)
+                    usage();
+            } else {
+                usage();
+            }
+        } else if (!strcmp(argv[i], "-o") || !strcmp(argv[i], "--offset")) {
+            if ((++i) < argc) {
+                offx = strtod(argv[i], &endptr);
                 if (*endptr)
                     usage();
             } else {
