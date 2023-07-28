@@ -330,6 +330,32 @@ const pattern_t flags[] = {
         },
         .get_color = get_color_stripes
     },
+
+    {
+        .name = "genderfluid",
+        .ansii_pattern = {
+            .codes_count = 10,
+            .ansii_codes = {
+                162, 162,
+                255, 255,
+                5, 5,
+                233, 233,
+                62, 62
+            },
+        },
+        .color_pattern = {
+            .stripes_count = 5,
+            .stripes_colors = {
+                0xff76a4, /* #000000 - Pink */
+                0xffffff, /* #a3a3a3 - White */
+                0xC011D7, /* #ffffff - Purple */
+                0x000000,  /* #800080 - Black */
+                0x2f3cbe  /* #800080 - Blue */
+            },
+            .factor = 4.0f
+        },
+        .get_color = get_color_stripes
+    },
     /* Add new flags above this line. */
 };
 
@@ -405,7 +431,7 @@ static void build_helpstr(void)
     /* old version of what this generates, for reference:
      * "                                    [rainbow: 0, trans: 1, NB: 2, lesbian: 3,\n"
      * "                                    gay: 4, pan: 5, bi: 6, genderfluid: 7, asexual: 8,\n"
-     * "                                    unlabeled: 9, aromantic: 10, aroace: 11]\n"
+     * "                                    unlabeled: 9, aromantic: 10, aroace: 11, genderfluid: 12]\n"
      * would be nice to have the dynamic word-wrap back, but that's
      * more clever than I currently feel like trying to be
      */
