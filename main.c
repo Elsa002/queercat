@@ -330,6 +330,25 @@ const pattern_t flags[] = {
         },
         .get_color = get_color_stripes
     },
+
+    {
+        .name = "sapphic",
+        .ansii_pattern = {
+            .codes_count = 8,
+            .ansii_codes = {97, 97, 204, 204, 221, 221, 77, 77}
+        },
+        .color_pattern = {
+            .stripes_count = 4,
+            .stripes_colors = {
+                0x663399, /* #663399 - Purple */
+                0xff6699, /* #ff6699 - Pink */
+                0xffcc33, /* #ffcc33 - Yellow */
+                0x66cc33  /* #66cc33 - Green */
+            },
+            .factor = 1.0f
+        },
+        .get_color = get_color_stripes
+    },
     /* Add new flags above this line. */
 };
 
